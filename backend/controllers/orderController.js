@@ -1,7 +1,6 @@
-// backend/controllers/orderController.js
 import db from "../config/db.js";
 
-// ✅ Create Order
+// Create Order
 export const createOrder = async (req, res) => {
   const { user_id, items, total_amount, payment_method } = req.body;
 
@@ -13,14 +12,14 @@ export const createOrder = async (req, res) => {
   await connection.beginTransaction();
 
   try {
-    // 1️⃣ Create order record
+    // Create order record
     const [orderResult] = await connection.query(
       `INSERT INTO orders (user_id, total_amount, order_status) VALUES (?, ?, 'pending')`,
       [user_id, total_amount]
     );
     const order_id = orderResult.insertId;
 
-    // 2️⃣ Insert order items
+    // Insert order items
     for (const item of items) {
       await connection.query(
         `INSERT INTO order_items (order_id, item_id, quantity, price)
@@ -29,14 +28,14 @@ export const createOrder = async (req, res) => {
       );
     }
 
-    // 3️⃣ Create payment record
+    // Create payment record
     await connection.query(
       `INSERT INTO payments (order_id, payment_method, amount, payment_status)
        VALUES (?, ?, ?, 'pending')`,
       [order_id, payment_method || "cash", total_amount]
     );
 
-    // 4️⃣ Record order status history
+    // Record order status history
     await connection.query(
       `INSERT INTO order_status_history (order_id, new_status, note)
        VALUES (?, 'pending', 'Order placed')`,
@@ -59,7 +58,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
-// ✅ Get all orders by user
+// Get all orders by user
 export const getUserOrders = async (req, res) => {
   console.log(req.body)
   const { userId } = req.params;
@@ -76,7 +75,7 @@ export const getUserOrders = async (req, res) => {
   }
 };
 
-// ✅ Get single order with items
+// Get single order with items
 export const getOrderDetails = async (req, res) => {
   const { orderId } = req.params;
   try {
@@ -90,8 +89,6 @@ export const getOrderDetails = async (req, res) => {
        WHERE oi.order_id = ?`,
       [orderId]
     );
-
-    console.log("ORDER DETAILS FOR : ",order);
     res.json({ order, items });
   } catch (err) {
     console.error(err);
@@ -99,7 +96,7 @@ export const getOrderDetails = async (req, res) => {
   }
 };
 
-// ✅ Admin: update order status
+// Admin: update order status
 export const updateOrderStatus = async (req, res) => {
   const { orderId } = req.params;
   const { new_status, admin_id, note } = req.body;
