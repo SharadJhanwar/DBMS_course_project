@@ -27,12 +27,15 @@ export const createOrder = async (req, res) => {
         [order_id, item.item_id, item.quantity, item.price]
       );
     }
-
+    let payment_status;
     // Create payment record
+    if(payment_method == 'upi' || payment_method == 'card'){
+      payment_status = 'completed'
+    }
     await connection.query(
       `INSERT INTO payments (order_id, payment_method, amount, payment_status)
-       VALUES (?, ?, ?, 'pending')`,
-      [order_id, payment_method || "cash", total_amount]
+       VALUES (?, ?, ?, ?)`,
+      [order_id, payment_method || "cash", total_amount,payment_status]
     );
 
     // Record order status history
@@ -60,7 +63,6 @@ export const createOrder = async (req, res) => {
 
 // Get all orders by user
 export const getUserOrders = async (req, res) => {
-  console.log(req.body)
   const { userId } = req.params;
   try {
     const [orders] = await db.query(
@@ -113,6 +115,7 @@ export const updateOrderStatus = async (req, res) => {
        VALUES (?, ?, ?, ?, ?)`,
       [orderId, order.order_status, new_status, admin_id || null, note || null]
     );
+    // also we have added trigger in sql so now whenever order_status is completed and payment_mode was cash cash a trigger will be called updating status of payment_status to completed
 
     res.json({ message: "Order status updated successfully" });
   } catch (err) {
@@ -123,7 +126,6 @@ export const updateOrderStatus = async (req, res) => {
 
 // get all orders (admin)
 export const getAllOrders = async (req, res) => {
-  console.log(req);
   try {
     const [orders] = await db.query(
       `SELECT o.*, u.name as user_name, u.email as user_email

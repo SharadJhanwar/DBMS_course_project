@@ -4,31 +4,26 @@ import db from "../config/db.js";
 export const getUserProfile = async (req, res) => {
   const { userId } = req.params;
   try {
-    // User basic info
-    const [user] = await db.query("SELECT user_id, name, email, role FROM users WHERE user_id = ?", [userId]);
+    // we are calling a procedure 
+    const [results] = await db.query("CALL GetUserFullProfile(?)", [userId]);
 
-    if (user.length === 0) return res.status(404).json({ message: "User not found" });
+    // MySQL returns results as an array of arrays for multiple SELECTs
+    const user = results[0]?.[0] || null;
+    const profile = results[1]?.[0] || null;
+    const addresses = results[2] || [];
 
-    // Profile info
-    const [profile] = await db.query("SELECT * FROM user_profiles WHERE user_id = ?", [userId]);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Addresses
-    const [addresses] = await db.query("SELECT * FROM user_addresses WHERE user_id = ?", [userId]);
-
-    res.json({
-      user: user[0],
-      profile: profile[0] || null,
-      addresses,
-    });
+    res.json({ user, profile, addresses });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error fetching user profile" });
   }
 };
 
+
 // Create or update profile 
 export const upsertUserProfile = async (req, res) => {
-  console.log(req.body);
   const { userId } = req.params;
   const { phone, gender, date_of_birth, profile_image, bio } = req.body;
 

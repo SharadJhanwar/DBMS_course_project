@@ -40,7 +40,6 @@ export const addToCart = async (req, res) => {
         [user_id, item_id, quantity]
       );
     }
-
     res.json({ message: 'Item added/updated in cart' });
   } catch (err) {
     res.status(500).json({ message: 'Error adding to cart', error: err.message });
